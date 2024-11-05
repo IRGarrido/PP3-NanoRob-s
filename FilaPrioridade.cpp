@@ -7,28 +7,28 @@ using namespace std;
 typedef unsigned int uint;
 
 // FILA
-class ItemFila {
+class QueueItem {
 public:
-    int valor;
-    int chave;
+    int value;
+    int key;
 
-    ItemFila(): valor(numeric_limits<int>::max()), chave(numeric_limits<int>::max()) {};
+    QueueItem(): value(numeric_limits<int>::max()), key(numeric_limits<int>::max()) {};
 
-    ItemFila(int valor, int chave): valor(valor), chave(chave) {};
-    bool operator==(const ItemFila& other) const {
-        return valor == other.valor;
+    QueueItem(int value, int key): value(value), key(key) {};
+    bool operator==(const QueueItem& other) const {
+        return value == other.value;
     };
 };
 
 // HEAP
-class FilaPrioridadeMin {
+class PriorityQueueMin {
 public:
-    ItemFila* heap;
+    QueueItem* heap;
     uint size;
     uint heapSize;
 
-    FilaPrioridadeMin();
-    ~FilaPrioridadeMin();
+    PriorityQueueMin();
+    ~PriorityQueueMin();
 
     uint parent(uint index) {
         return index/2;
@@ -42,59 +42,59 @@ public:
         return 2*index + 1;
     };
     
-    void minHeapfy(uint index);
+    void minHeapfy(uint);
     void buildMinHeap();
     void resizeHeap();
-    void insert(ItemFila element);
-    void decreaseMin();
-    ItemFila minumum() {
+    void insert(QueueItem);
+    void decreaseMin(int, int);
+    QueueItem minumum() {
         return heap[1];
     };
-    ItemFila extractMin();
+    QueueItem extractMin();
 };
 
-FilaPrioridadeMin::FilaPrioridadeMin() {
+PriorityQueueMin::PriorityQueueMin() {
     size = 2;
     heapSize = 0;
-    heap = new ItemFila[size];
+    heap = new QueueItem[size];
 };
 
-FilaPrioridadeMin::~FilaPrioridadeMin() {
+PriorityQueueMin::~PriorityQueueMin() {
     delete [] heap;
 };
 
-void FilaPrioridadeMin::minHeapfy(uint index) {
+void PriorityQueueMin::minHeapfy(uint index) {
     uint indexL = left(index);
     uint indexR = right(index);
     uint smallest;
 
-    if(indexL <= heapSize && heap[indexL].chave < heap[index].chave) {
+    if(indexL <= heapSize && heap[indexL].key < heap[index].key) {
         smallest = indexL;
     } else {
         smallest = index;
     }
     
-    if(indexR <= heapSize && heap[indexR].chave < heap[smallest].chave) {
+    if(indexR <= heapSize && heap[indexR].key < heap[smallest].key) {
         smallest = indexR;
     } 
 
     if(smallest != index) {
-        ItemFila aux = heap[smallest];
+        QueueItem aux = heap[smallest];
         heap[smallest] = heap[index];
         heap[index] = aux;
         minHeapfy(smallest);
     }
 };
 
-void FilaPrioridadeMin::buildMinHeap() {
+void PriorityQueueMin::buildMinHeap() {
     for(int i = heapSize/2; i >= 1; --i) {
         minHeapfy(i);
     }
 };
 
-void FilaPrioridadeMin::resizeHeap() {
+void PriorityQueueMin::resizeHeap() {
     size = 2 * size;
-    ItemFila* newHeap = new ItemFila[size];
+    QueueItem* newHeap = new QueueItem[size];
 
     for(uint i = 0; i <= heapSize+1; ++i){
         newHeap[i] = heap[i];
@@ -105,7 +105,7 @@ void FilaPrioridadeMin::resizeHeap() {
     heap = newHeap;
 };
 
-void FilaPrioridadeMin::insert(ItemFila element) {
+void PriorityQueueMin::insert(QueueItem element) {
     if(heapSize + 1 == size) {
         resizeHeap();
     }
@@ -114,13 +114,13 @@ void FilaPrioridadeMin::insert(ItemFila element) {
     buildMinHeap();
 };
 
-ItemFila FilaPrioridadeMin::extractMin() {
-    ItemFila removido = minumum();
-    ItemFila espacoVazio;
-    heap[1] = espacoVazio;
+QueueItem PriorityQueueMin::extractMin() {
+    QueueItem removed = minumum();
+    QueueItem emptySpace;
+    heap[1] = emptySpace;
     minHeapfy(1);
     for(uint i = 1; i <= heapSize; ++i) {
-        if(heap[i].chave == numeric_limits<int>::max()){
+        if(heap[i].key == numeric_limits<int>::max()){
             for(uint j = i; j <= heapSize; ++j) {
                 heap[j] = heap[j+1];
             }
@@ -128,93 +128,111 @@ ItemFila FilaPrioridadeMin::extractMin() {
     }
     heapSize--;
 
-    return removido;
-}
+    return removed;
+};
 
-void imprimirVetor(ItemFila* vetor, uint tamanho) {
-    for (uint i = 1; i < tamanho; ++i) {
+void PriorityQueueMin::decreaseMin(int previousKey, int Key) {
+    if(Key < previousKey) {
+        for(uint i = 1; i <= heapSize; ++i) {
+            if(heap[i].key == previousKey) {
+                QueueItem novo(heap[1].value, Key);
+                heap[i] = novo;
+                buildMinHeap();
+                return;
+            }
+        }
+    }
+};
+
+void printHeap(QueueItem* heap, uint size) {
+    for (uint i = 1; i < size; ++i) {
         cout << i << " ";
     }
     cout << endl;
-    for (uint i = 1; i < tamanho; ++i) {
-        if(vetor[i].valor == numeric_limits<int>::max()) {
+    for (uint i = 1; i < size; ++i) {
+        if(heap[i].value == numeric_limits<int>::max()) {
             cout << "inf" << " ";
         } else {
-            cout << vetor[i].valor << " ";
+            cout << heap[i].value << " ";
         }
     }
     cout << endl;
-    for (uint i = 1; i < tamanho; ++i) {
-        if(vetor[i].chave == numeric_limits<int>::max()) {
+    for (uint i = 1; i < size; ++i) {
+        if(heap[i].key == numeric_limits<int>::max()) {
             cout << "inf" << " ";
         } else {
-            cout << vetor[i].chave << " ";
+            cout << heap[i].key << " ";
         }
     }
     cout << endl;
 };
 
 int main(){
-    FilaPrioridadeMin teste;
+    PriorityQueueMin test;
 
-    ItemFila a(2,4);
-    ItemFila b(4,1);
-    ItemFila c(8,3);
-    ItemFila d(16, 2);
-    ItemFila e(32, 16);
-    ItemFila f(64, 9);
-    ItemFila g(128, 10);
-    ItemFila h(256, 14);
-    ItemFila i(512, 8);
-    ItemFila j(1024, 7);
+    QueueItem a(2,4);
+    QueueItem b(4,1);
+    QueueItem c(8,3);
+    QueueItem d(16, 2);
+    QueueItem e(32, 16);
+    QueueItem f(64, 9);
+    QueueItem g(128, 10);
+    QueueItem h(256, 14);
+    QueueItem i(512, 8);
+    QueueItem j(1024, 7);
 
     cout << numeric_limits<int>::max();
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(a);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(a);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(b);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(b);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(c);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(c);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(d);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(d);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(e);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(e);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(f);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(f);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(g);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(g);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(h);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(h);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(i);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(i);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.insert(j);
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.insert(j);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
-    teste.extractMin();
-    cout << "heapSize: " << teste.heapSize << " - size: " << teste.size << endl;
-    imprimirVetor(teste.heap, teste.size);
+    test.extractMin();
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
     cout << endl;
+    test.decreaseMin(8, 1);
+    cout << "heapSize: " << test.heapSize << " - size: " << test.size << endl;
+    printHeap(test.heap, test.size);
+    cout << endl;
+
     return 0;
 };
