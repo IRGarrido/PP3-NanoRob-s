@@ -198,10 +198,8 @@ WeightedGraphAL::~WeightedGraphAL() {
 
 void WeightedGraphAL::add_edge(Vertex v, Vertex u, Weight w) {
     VertexWeightPair pair_v(u, w);
-    VertexWeightPair pair_u(v, w);
 
     adj[v].push_back(pair_v);
-    adj[u].push_back(pair_u);
     num_edges++;
 };
 
@@ -216,15 +214,17 @@ Weight WeightedGraphAL::get_weight_edge(Vertex v, Vertex u) {
 };
 
 void print_list(list<VertexWeightPair> adj){
+    char labels[5] = {'s', 't', 'x', 'y', 'z'};
     for (VertexWeightPair pair: adj) {
-        cout << "(" << pair.vertex << ", " << pair.weight << "), ";
+        cout << "(" << labels[pair.vertex-1] << ", " << pair.weight << "), ";
     }
 };
 
 
 void print_WeightedGraphAL(WeightedGraphAL& g) {
-    for (Vertex v = 0; v < g.get_num_vertices(); ++v){
-        cout << v << ": ";
+    char labels[5] = {'s', 't', 'x', 'y', 'z'};
+    for (Vertex v = 1; v <= g.get_num_vertices(); ++v){
+        cout << labels[v-1] << ": ";
         list<VertexWeightPair> adj = g.get_adj(v);
         print_list(adj);
         cout << endl;
@@ -261,7 +261,7 @@ private:
 public:
     Dijkstra(WeightedGraphAL, Vertex);
     ~Dijkstra();
-    void relax(VertexDijkstra, VertexDijkstra, Weight);
+    bool relax(VertexDijkstra, VertexDijkstra, Weight);
     void init(WeightedGraphAL, Vertex);
 };
 
@@ -269,31 +269,40 @@ Dijkstra::Dijkstra(WeightedGraphAL graph, Vertex origin): graph(graph) {
     init(graph, origin);
     PriorityQueueMin queue;
 
-    // for(VertexDijkstra vertex: listVertex) {
-    //     QueueItem element(vertex.vertex, vertex.distance);
-    //     queue.insert(element);
-    // }
+    for(uint i = 1; i <= graph.get_num_vertices(); ++i) {
+        QueueItem element(listVertex[i].vertex, listVertex[i].distance);
+        queue.insert(element);
+        cout << element.value << " inserido na fila" << endl;
+    }
 
-    // while (!queue.isEmpty()) {
-    //     QueueItem u = queue.extractMin();
-    //     for(VertexDijkstra vertex: listVertex) {
-    //         if(vertex.vertex == u.value) {
-    //             minimumPath.push_back(vertex);
-    //         }
-    //     }
-        
-    //     for(VertexWeightPair pair: graph.get_adj(u.value)) {
-    //         for(VertexDijkstra vertex: listVertex) {
-    //             if(vertex.vertex = pair.vertex) {
-    //                 VertexDijkstra Vertex = vertex; 
-    //             }
-    //             if(vertex.vertex = u) {
-    //                 VertexDijkstra Vertex = vertex; 
-    //             }
-    //         }
-    //     };
-    // }
+    while (!queue.isEmpty()) {
+        QueueItem u = queue.extractMin();
+        cout << u.value << " sai da fila" << endl;
+        minimumPath.push_back(listVertex[u.value]);
+
+        // NÃO ESTÁ ENTRANDO NESTE FOR
+        for(VertexWeightPair pair: graph.get_adj(u.value)) {
+            cout << u.value << " oi?" << endl;
+            VertexDijkstra firstVertex = listVertex[u.value];
+            VertexDijkstra secondVertex = listVertex[pair.vertex];
+            if(relax(firstVertex, secondVertex, pair.weight)) {
+                cout << firstVertex.vertex << " e " << secondVertex.vertex << " relaxados para " << pair.weight << endl;
+            } 
+
+
+        }
+        cout << " Caminho mínimo " << endl;
+        for(auto vertice: minimumPath) {
+            cout << "( " << vertice.vertex << " - " << vertice.distance << " ), ";
+        }
+    }
     
+};
+
+Dijkstra::~Dijkstra() {
+    delete []  listVertex;
+    listVertex = nullptr;
+    minimumPath.clear();   
 };
 
 void Dijkstra::init(WeightedGraphAL graph, Vertex origin) {
@@ -309,9 +318,39 @@ void Dijkstra::init(WeightedGraphAL graph, Vertex origin) {
     s.distance = 0;
 };
 
-void Dijkstra::relax(VertexDijkstra u, VertexDijkstra v, Weight w) {
+bool Dijkstra::relax(VertexDijkstra u, VertexDijkstra v, Weight w) {
     if(v.distance > u.distance + graph.get_weight_edge(u.vertex, v.vertex)) {
         v.distance = u.distance + graph.get_weight_edge(u.vertex, v.vertex);
         v.previous = &u;
+        return true;
     }
+    return false;
+};
+
+
+int main(){
+    uint n_vertices = 5;
+
+    WeightedGraphAL g(n_vertices);
+
+    g.add_edge(1, 2, 10);
+    g.add_edge(1, 4, 5);
+    g.add_edge(2, 3, 1);
+    g.add_edge(2, 4, 2);
+    g.add_edge(3, 5, 4);
+    g.add_edge(4, 2, 3);
+    g.add_edge(4, 3, 9);
+    g.add_edge(4, 5, 2);
+    g.add_edge(5, 3, 6);
+    
+    cout << "num_vertices: " << g.get_num_vertices() << endl;
+    cout << "num_edges: " << g.get_num_edges() << endl;
+
+    print_WeightedGraphAL(g);
+
+    Dijkstra(g, 1);
+
+    print_WeightedGraphAL(g);
+
+    return 0;
 };
