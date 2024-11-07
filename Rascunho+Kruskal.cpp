@@ -1,5 +1,6 @@
 #include<iostream>
 #include<list>
+#include<limits>
 
 using namespace std;
 
@@ -11,66 +12,81 @@ class VertexWeightPair {
 public:
     Vertex vertex;
     Weight weight;
-    GrafoNeuronios* blocoNeuronios = nullptr;
+    NeuronGraph* blocoNeuronios = nullptr;
     VertexWeightPair(Vertex vertex, Weight weight): vertex(vertex), weight(weight) {};
     bool operator==(const VertexWeightPair& other) const {
         return vertex == other.vertex && weight == other.weight;
     }
 };
 
-class Aresta {
+class Edge {
 public:
     Vertex vertex;
     Vertex vertex2;
     Weight weight;
-    Aresta(Vertex vertex,Vertex vertex2, Weight weight): vertex(vertex),vertex2(vertex2), weight(weight) {};
+    Edge(Vertex vertex,Vertex vertex2, Weight weight): vertex(vertex),vertex2(vertex2), weight(weight) {};
 };
 
 
-class GrafoCerebro{
+class BrainGraph{
 private:
-    uint num_vertices;
-    uint num_edges;
+    uint numVertices;
+    uint numEdges;
     list<VertexWeightPair> *adj;
-public:
-    GrafoCerebro(uint);
-    ~GrafoCerebro();
-    void add_edge(Vertex, Vertex, Weight);
-    Weight get_weight_edge(Vertex, Vertex);
+    Vertex begin;
+    Vertex end;
 
-    uint get_num_vertices(){
-        return num_vertices;
+public:
+    BrainGraph(uint);
+    ~BrainGraph();
+    void addEdge(Vertex, Vertex, Weight);
+    void setBegin(Vertex begin) {
+        this->begin = begin;
     };
-    uint get_num_edges(){
-        return num_edges;
+    void setEnd(Vertex end) {
+        this->end = end;
     };
-    list<VertexWeightPair> get_adj(Vertex v) {
+    Vertex getBegin() {
+        return begin;
+    }
+    Vertex getEnd() {
+        return end;
+    }
+    Weight getWeightEdge(Vertex, Vertex);
+
+    uint getNumVertices(){
+        return numVertices;
+    };
+    uint getNumEdges(){
+        return numEdges;
+    };
+    list<VertexWeightPair> getAdj(Vertex v) {
         return adj[v];
     };
 };
 
-GrafoCerebro::GrafoCerebro(uint num_vertices): num_vertices(num_vertices), num_edges(0) {
-        adj = new list<VertexWeightPair>[num_vertices];
+BrainGraph::BrainGraph(uint numVertices): numVertices(numVertices), numEdges(0), begin(0), end(0) {
+    adj = new list<VertexWeightPair>[numVertices];
 };
 
-GrafoCerebro::~GrafoCerebro() {
-    for(uint i = 0; i < num_vertices; ++i) {
+BrainGraph::~BrainGraph() {
+    for(uint i = 0; i < numVertices; ++i) {
         adj[i].clear();
     }
     delete[] adj;
-    num_edges = num_vertices = 0;
+    numEdges = numVertices = 0;
 };
 
-void GrafoCerebro::add_edge(Vertex v, Vertex u, Weight w) {
+void BrainGraph::addEdge(Vertex v, Vertex u, Weight w) {
     VertexWeightPair pair_v(u, w);
     VertexWeightPair pair_u(v, w);
 
     adj[v].push_back(pair_v);
     adj[u].push_back(pair_u);
-    num_edges++;
+    numEdges++;
 };
 
-Weight GrafoCerebro::get_weight_edge(Vertex v, Vertex u) {
+Weight BrainGraph::getWeightEdge(Vertex v, Vertex u) {
     for (VertexWeightPair pair: adj[v]){
         Vertex vertex = pair.vertex;
         if (vertex == u) {
@@ -80,23 +96,28 @@ Weight GrafoCerebro::get_weight_edge(Vertex v, Vertex u) {
     return 0.0;
 }
 
-class Neuronio {
+class NeuronGraph {
 private:
-    uint num_vertices;
+    uint numVertices;
     uint num_edges;
     list<VertexWeightPair> *adj;
-    list<Vertex> lista_vertices;
-    list<Aresta> lista_arestas;
+    list<Vertex> listNeuron;
+    list<Edge> listEdges;
+
 public:
-    Neuronio(uint);
-    ~Neuronio();
-    list<Vertex>& get_lista_vertices(){return lista_vertices;};
-    list<Aresta>& get_lista_arestas(){return lista_arestas;};
+    NeuronGraph(uint);
+    ~NeuronGraph();
+    list<Vertex>& get_lista_vertices() {
+        return listNeuron;
+    };
+    list<Edge>& get_lista_arestas() {
+        return listEdges;
+    };
     void add_edge(Vertex, Vertex, Weight);
     Weight get_weight_edge(Vertex, Vertex);
 
     uint get_num_vertices(){
-        return num_vertices;
+        return numVertices;
     };
     uint get_num_edges(){
         return num_edges;
@@ -106,33 +127,33 @@ public:
     };
 };
 
-Neuronio::Neuronio(uint num_vertices): num_vertices(num_vertices), num_edges(0) {
-        adj = new list<VertexWeightPair>[num_vertices];
-        for(uint i = 1; i <= num_vertices; i++) {
-            lista_vertices.push_back(i);
+NeuronGraph::NeuronGraph(uint numVertices): numVertices(numVertices), num_edges(0) {
+        adj = new list<VertexWeightPair>[numVertices];
+        for(uint i = 1; i <= numVertices; i++) {
+            listNeuron.push_back(i);
         }
 };
 
-Neuronio::~Neuronio() {
-    for(uint i = 0; i < num_vertices; ++i) {
+NeuronGraph::~NeuronGraph() {
+    for(uint i = 0; i < numVertices; ++i) {
         adj[i].clear();
     }
     delete[] adj;
-    num_edges = num_vertices = 0;
+    num_edges = numVertices = 0;
 };
 
-void Neuronio::add_edge(Vertex v, Vertex u, Weight w) {
+void NeuronGraph::add_edge(Vertex v, Vertex u, Weight w) {
     VertexWeightPair pair_v(u, w);
     VertexWeightPair pair_u(v, w);
 
     adj[v].push_back(pair_v);
     adj[u].push_back(pair_u);
 
-    lista_arestas.emplace_back(u,v,w);
+    listEdges.emplace_back(u,v,w);
     num_edges++;
 };
 
-Weight Neuronio::get_weight_edge(Vertex v, Vertex u) {
+Weight NeuronGraph::get_weight_edge(Vertex v, Vertex u) {
     for (VertexWeightPair pair: adj[v]){
         Vertex vertex = pair.vertex;
         if (vertex == u) {
@@ -148,11 +169,10 @@ void print_list(list<VertexWeightPair> adj){
     }
 };
 
-
-void print_WeightedGraphAL(Neuronio& g) {
-    for (Vertex v = 0; v < g.get_num_vertices(); ++v){
+void print_WeightedGraphAL(NeuronGraph& graph) {
+    for (Vertex v = 0; v < graph.get_num_vertices(); ++v){
         cout << v << ": ";
-        list<VertexWeightPair> adj = g.get_adj(v);
+        list<VertexWeightPair> adj = graph.get_adj(v);
         print_list(adj);
         cout << endl;
     }
@@ -160,18 +180,22 @@ void print_WeightedGraphAL(Neuronio& g) {
 
 class Kruskal {
 public:
-    Kruskal(Neuronio& g);
-    vector<Vertex> pai;
-    list<Aresta> floresta;
-    Vertex find_set(Vertex x);
+    list<Vertex> mst;
+    list<Edge> floresta;
+    
+    Kruskal(NeuronGraph& graph);
     void union_set(Vertex u, Vertex v);
+    Vertex find_set(Vertex x);
 };
-Kruskal::Kruskal(Neuronio& g) {
-    for (Vertex v: g.get_lista_vertices()) {
-        pai.push_back(v);
+
+Kruskal::Kruskal(NeuronGraph& graph) {
+    for (Vertex v: graph.get_lista_vertices()) {
+        mst.push_back(v);
     }
-    //espaço para o heapsort
-    for (Aresta aresta: g.get_lista_arestas()) {
+
+    mst.sort();
+
+    for (Edge aresta: graph.get_lista_arestas()) {
         if (find_set(aresta.vertex) != find_set(aresta.vertex2)) {
             floresta.push_back(aresta);
             union_set(aresta.vertex, aresta.vertex2);
@@ -181,14 +205,20 @@ Kruskal::Kruskal(Neuronio& g) {
 }
 
 Vertex Kruskal::find_set(Vertex x) {
-    if(pai[x]!=x+1) {
-        pai[x] = find_set(pai[x]);
+    for(Vertex vertex: mst) {
+        if((vertex == x) && (vertex != x+1)) {
+            vertex = find_set(vertex);
+        }
     }
-    return pai[x];
+    return x;
 }
 
 void Kruskal::union_set(Vertex u, Vertex v) {
-    pai[v]=u;
+    for(Vertex vertex: mst) {
+        if(vertex == v) {
+            vertex = u;
+        }
+    }
 }
 
 int main(){
@@ -196,7 +226,7 @@ int main(){
     cin >> nVerticesGrafoCerebro;
     cin >> nArestasGrafoCerebro;
 
-    // GrafoCerebro Cerebro(nVerticesGrafoCerebro, nArestasGrafoCerebro);
+    // BrainGraph Cerebro(nVerticesGrafoCerebro, nArestasGrafoCerebro);
 
     for(int i = 0; i < nArestasGrafoCerebro; ++i){
         Vertex u, v;
