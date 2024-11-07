@@ -81,6 +81,7 @@ public:
         for(Neuron neuron: listNeuron) {
             if(neuron.vertex == vertex) {
                 neuron.sick = true;
+                numSickNeurons++;
                 return;
             }
         }
@@ -88,26 +89,25 @@ public:
 };
 
 NeuronGraph::NeuronGraph(uint numVertices): numVertices(numVertices), numEdges(0) {
-        adj = new list<VertexWeightPair>[numVertices];
-        for(uint i = 1; i <= numVertices; i++) {
-            listNeuron.push_back(i);
-        }
+    adj = new list<VertexWeightPair>[numVertices+1];
+    for(uint i = 1; i <= numVertices; ++i) {
+        listNeuron.push_back(i);
+    }
 };
 
 NeuronGraph::~NeuronGraph() {
-    for(uint i = 0; i < numVertices; ++i) {
+    for(uint i = 0; i <= numVertices; ++i) {
         adj[i].clear();
     }
+    listNeuron.clear();
     delete[] adj;
     numEdges = numVertices = 0;
 };
 
 void NeuronGraph::addEdge(Vertex v, Vertex u, Weight w) {
     VertexWeightPair pair_v(u, w);
-    VertexWeightPair pair_u(v, w);
 
     adj[v].push_back(pair_v);
-    adj[u].push_back(pair_u);
 
     listEdges.emplace_back(u,v,w);
     numEdges++;
@@ -176,7 +176,7 @@ void Kruskal::union_set(Vertex u, Vertex v) {
 class BrainVertex {
 public:
     Vertex vertex;
-    NeuronGraph* neuronBlockGraph = nullptr;
+    NeuronGraph* neuronBlockGraph;
     BrainVertex(): vertex(numeric_limits<Vertex>::max()) {};
     BrainVertex(Vertex vertex): vertex(vertex) {};
 };
@@ -223,6 +223,9 @@ public:
     NeuronGraph*& getNeuron(Vertex v) {
         return neuronBlocks[v].neuronBlockGraph;
     }
+    void setNeuron(Vertex v, NeuronGraph* graph) {
+        neuronBlocks[v].neuronBlockGraph = graph;
+    }
 };
 
 BrainGraph::BrainGraph(uint numVertices): numVertices(numVertices), numEdges(0) {
@@ -245,10 +248,8 @@ BrainGraph::~BrainGraph() {
 
 void BrainGraph::addEdge(Vertex v, Vertex u, Weight w) {
     VertexWeightPair pair_v(u, w);
-    VertexWeightPair pair_u(v, w);
 
     adj[v].push_back(pair_v);
-    adj[u].push_back(pair_u);
     numEdges++;
 };
 
@@ -309,7 +310,6 @@ public:
     void decreaseMin(int, double);
     bool isEmpty() {
         if (heapSize == 0) {
-            cout << "ESVAZIOU" << endl;
             return true;
         }
         return false;
@@ -438,52 +438,95 @@ public:
 class Dijkstra {
 private:
     BrainGraph graph;
-    VertexDijkstra* listNeuron;
-    list<VertexDijkstra> minimumPath;
     Vertex origin;
+    VertexDijkstra* listNeuron;
+    list<VertexDijkstra> distances;
 
 public:
     Dijkstra(BrainGraph&, Vertex);
     ~Dijkstra();
     bool relax(VertexDijkstra&, VertexDijkstra&, Weight, PriorityQueueMin&);
     void init(BrainGraph&, Vertex);
+    void setToMinimunPath(VertexDijkstra&, list<VertexDijkstra>&);
+    list<VertexDijkstra> getMinimunPath(Vertex);
 };
 
 Dijkstra::Dijkstra(BrainGraph& graph, Vertex origin): graph(graph) {
-    char labels[6] = {'#', 's', 't', 'x', 'y', 'z'};
     init(graph, origin);
     PriorityQueueMin queue;
 
     for(uint i = 1; i <= graph.getNumVertices(); ++i) {
         QueueItem element(listNeuron[i].vertex, listNeuron[i].distance);
         queue.insert(element);
-        cout << labels[element.value] << " inserido na fila" << endl;
+        // cout << element.value << " inserido na fila" << endl;
     }
 
     while (!queue.isEmpty()) {
         QueueItem u = queue.extractMin();
-        cout << labels[u.value] << " sai da fila ( " << u.key << " )" << endl;
-        minimumPath.push_back(listNeuron[u.value]);
+        // cout << u.value << " sai da fila ( " << u.key << " )" << endl;
+        distances.push_back(listNeuron[u.value]);
 
         for(VertexWeightPair& pair: graph.getAdj(u.value)) {
             if(relax(listNeuron[u.value], listNeuron[pair.vertex], pair.weight, queue)) {
-                cout << labels[listNeuron[u.value].vertex] << " e " << labels[listNeuron[pair.vertex].vertex] << " relaxados para " << pair.weight << endl;
+                // cout << listNeuron[u.value].vertex << " e " << listNeuron[pair.vertex].vertex << " relaxados para " << pair.weight << endl;
             } 
         }
 
     }
     
-    cout << " Caminho minimo " << endl;
-    for(auto vertice: minimumPath) {
-        cout << "( " << labels[vertice.vertex] << " - " << vertice.distance << " ), ";
+    // cout << " Caminho minimo "  << endl;
+    // for(VertexDijkstra vertice: distances) {
+    //     cout << " oi "  << endl;
+    //     cout << "( " << vertice.vertex << " - " << vertice.distance << " ), ";
+    // }
+};
+
+void Dijkstra::setToMinimunPath(VertexDijkstra& vertex, list<VertexDijkstra>& minimunPath) {
+    minimunPath.push_front(vertex);
+
+    if(vertex.previous == nullptr) {
+        return;
     }
+
+    setToMinimunPath(*vertex.previous, minimunPath);
+}
+
+list<VertexDijkstra> Dijkstra::getMinimunPath(Vertex end) {
+    list<VertexDijkstra> minimunPath;
     
+    VertexDijkstra* addressVertex = nullptr;
+
+    for(VertexDijkstra& vertex: distances) {
+        if(vertex.vertex == end) {
+            addressVertex = &vertex;
+            break;
+        }
+    }
+
+    if(addressVertex == nullptr) {
+        cout << "vazio" << endl;
+        return minimunPath;
+    }
+
+    setToMinimunPath(*addressVertex, minimunPath);
+
+    cout << "Caminho minimo "  << endl;
+    for(VertexDijkstra vertice: minimunPath) {
+        cout << "( " << vertice.vertex << " - " << vertice.distance << " ), ";
+    }
+
+    return minimunPath;
 };
 
 Dijkstra::~Dijkstra() {
+    for(VertexDijkstra& element: distances) {
+        if(element.previous) {
+            delete element.previous;
+        }
+    }
+    distances.clear();   
     delete []  listNeuron;
     listNeuron = nullptr;
-    minimumPath.clear();   
 };
 
 void Dijkstra::init(BrainGraph& graph, Vertex origin) {
@@ -538,7 +581,8 @@ int main(){
         cin >> numVerticesNeuronGraph;
         cin >> numEdgesNeuronGraph;
 
-        brain.getNeuron(i) = new NeuronGraph(numVerticesNeuronGraph);
+        NeuronGraph* neurons = new NeuronGraph(numVerticesNeuronGraph);
+        brain.setNeuron(i, neurons);
 
         uint numSickNeurons;
         cin >> numSickNeurons;
@@ -548,7 +592,7 @@ int main(){
             brain.getNeuron(i)->turnSick(sickNeuron);
         }
 
-        for(int i = 0; i < numEdgesNeuronGraph; ++i){
+        for(int j = 0; j < numEdgesNeuronGraph; ++j){
             Vertex u, v;
             Weight weightUV;
             cin >> u;
@@ -556,6 +600,17 @@ int main(){
             cin >> weightUV;
             brain.getNeuron(i)->addEdge(u, v, weightUV);
         }       
+    }
+
+    Dijkstra minimunPath(brain, brain.getBegin());
+    
+    list<VertexDijkstra> lista = minimunPath.getMinimunPath(brain.getEnd());
+
+    for(VertexDijkstra item: lista) {
+        if(brain.getNeuron(item.vertex)->getNumSickNeurons() > 0) {
+            Kruskal(*brain.getNeuron(item.vertex));
+        }
+        
     }
 
     return 0;
