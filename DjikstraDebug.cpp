@@ -58,6 +58,9 @@ public:
         return false;
     };
     QueueItem minumum() {
+        if (heapSize == 0) {
+            throw out_of_range("Heap is empty, cannot access minimum.");
+        }
         return heap[1];
     };
     QueueItem extractMin();
@@ -70,7 +73,7 @@ PriorityQueueMin::PriorityQueueMin() {
 };
 
 PriorityQueueMin::~PriorityQueueMin() {
-    delete[] heap;
+    delete [] heap;
 };
 
 void PriorityQueueMin::minHeapfy(uint index) {
@@ -78,13 +81,13 @@ void PriorityQueueMin::minHeapfy(uint index) {
     uint indexR = right(index);
     uint smallest;
 
-    if(indexL <= heapSize && heap[indexL].key < heap[index].key) {
+    if((indexL <= heapSize) && (heap[indexL].key < heap[index].key)) {
         smallest = indexL;
     } else {
         smallest = index;
     }
     
-    if(indexR <= heapSize && heap[indexR].key < heap[smallest].key) {
+    if((indexR <= heapSize) && (heap[indexR].key < heap[smallest].key)) {
         smallest = indexR;
     } 
 
@@ -106,10 +109,11 @@ void PriorityQueueMin::resizeHeap() {
     size = 2 * size;
     QueueItem* newHeap = new QueueItem[size];
 
-    for(uint i = 0; i < heapSize; ++i){
+    for(uint i = 1; i <= heapSize; ++i){
         newHeap[i] = heap[i];
     }
 
+    delete[] heap;
     heap = newHeap;
 };
 
@@ -123,18 +127,15 @@ void PriorityQueueMin::insert(QueueItem element) {
 };
 
 QueueItem PriorityQueueMin::extractMin() {
-    QueueItem emptySpace;
-    QueueItem removed = minumum();
-    heap[1] = emptySpace;
-    minHeapfy(1);
-    for(uint i = 1; i <= heapSize; ++i) {
-        if(heap[i].key == numeric_limits<double>::infinity()){
-            for(uint j = i; j <= heapSize; ++j) {
-                heap[j] = heap[j+1];
-            }
-        }
+    if (heapSize == 0) {
+        throw out_of_range("Heap is empty, cannot extract minimum.");
     }
+
+    QueueItem removed = minumum();
+
+    heap[1] = heap[heapSize];
     heapSize--;
+    minHeapfy(1); 
 
     return removed;
 };
@@ -155,6 +156,7 @@ public:
     Vertex vertex;
     Weight weight;
     VertexWeightPair(Vertex vertex, Weight weight): vertex(vertex), weight(weight) {};
+    ~VertexWeightPair() {};
 
     bool operator==(const VertexWeightPair& other) const {
         return vertex == other.vertex && weight == other.weight;
@@ -180,6 +182,12 @@ public:
         return num_edges;
     };
     list<VertexWeightPair> get_adj(Vertex v) {
+        if(v <= 0 || v > numVertices) {
+            throw out_of_range("Index beyond number of vertices");
+        }
+        if(adj == nullptr) {
+            throw invalid_argument("Nullpointer received");
+        } 
         return adj[v];
     };
 };
@@ -193,6 +201,7 @@ WeightedGraphAL::~WeightedGraphAL() {
         adj[i].clear();
     }
     delete[] adj;
+    adj = nullptr;
     num_edges = numVertices = 0;
 };
 
@@ -213,18 +222,16 @@ Weight WeightedGraphAL::get_weight_edge(Vertex v, Vertex u) {
     return numeric_limits<Weight>::infinity();
 };
 
-void print_list(list<VertexWeightPair> adj){
-    char labels[5] = {'s', 't', 'x', 'y', 'z'};
+void print_list(list<VertexWeightPair>& adj){
     for (VertexWeightPair pair: adj) {
-        cout << "(" << labels[pair.vertex-1] << ", " << pair.weight << "), ";
+        cout << "(" << pair.vertex-1 << ", " << pair.weight << "), ";
     }
 };
 
 
 void print_WeightedGraphAL(WeightedGraphAL& g) {
-    char labels[5] = {'s', 't', 'x', 'y', 'z'};
     for (Vertex v = 1; v <= g.get_num_vertices(); ++v){
-        cout << labels[v-1] << ": ";
+        cout << v-1 << ": ";
         list<VertexWeightPair> adj = g.get_adj(v);
         print_list(adj);
         cout << endl;
@@ -267,24 +274,23 @@ public:
 };
 
 Dijkstra::Dijkstra(WeightedGraphAL& graph, Vertex origin): graph(graph) {
-    char labels[6] = {'#', 's', 't', 'x', 'y', 'z'};
     init(graph, origin);
     PriorityQueueMin queue;
 
     for(uint i = 1; i <= graph.get_num_vertices(); ++i) {
         QueueItem element(listVertex[i].vertex, listVertex[i].distance);
         queue.insert(element);
-        cout << labels[element.value] << " inserido na fila" << endl;
+        cout << element.value << " inserido na fila" << endl;
     }
 
     while (!queue.isEmpty()) {
         QueueItem u = queue.extractMin();
-        cout << labels[u.value] << " sai da fila ( " << u.key << " )" << endl;
+        cout << u.value << " sai da fila ( " << u.key << " )" << endl;
         minimumPath.push_back(listVertex[u.value]);
 
         for(VertexWeightPair& pair: graph.get_adj(u.value)) {
             if(relax(listVertex[u.value], listVertex[pair.vertex], pair.weight, queue)) {
-                cout << labels[listVertex[u.value].vertex] << " e " << labels[listVertex[pair.vertex].vertex] << " relaxados para " << pair.weight << endl;
+                cout << listVertex[u.value].vertex << " e " << listVertex[pair.vertex].vertex << " relaxados para " << pair.weight << endl;
             } 
         }
 
@@ -292,13 +298,13 @@ Dijkstra::Dijkstra(WeightedGraphAL& graph, Vertex origin): graph(graph) {
     
     cout << " Caminho minimo " << endl;
     for(auto vertice: minimumPath) {
-        cout << "( " << labels[vertice.vertex] << " - " << vertice.distance << " ), ";
+        cout << "( " << vertice.vertex << " - " << vertice.distance << " ), ";
     }
     
 };
 
 Dijkstra::~Dijkstra() {
-    delete[] listVertex;
+    delete[]  listVertex;
     listVertex = nullptr;
     minimumPath.clear();   
 };

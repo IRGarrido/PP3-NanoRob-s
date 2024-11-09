@@ -16,9 +16,6 @@ public:
     Vertex vertex;
     Weight weight;
     VertexWeightPair(Vertex vertex, Weight weight): vertex(vertex), weight(weight) {};
-    bool operator==(const VertexWeightPair& other) const {
-        return vertex == other.vertex && weight == other.weight;
-    }
 };
 
 // ARESTA
@@ -56,10 +53,10 @@ private:
 public:
     NeuronGraph(uint);
     ~NeuronGraph();
-    list<Neuron>& get_lista_vertices() {
+    list<Neuron>& getListNeurons() {
         return listNeuron;
     };
-    list<Edge>& get_lista_arestas() {
+    list<Edge>& getListEdges() {
         return listEdges;
     };
     void addEdge(Vertex, Vertex, Weight);
@@ -127,49 +124,46 @@ Weight NeuronGraph::getWeightEdge(Vertex v, Vertex u) {
 // KRUSKAL
 // -----------------------------------------------------------------------------
 class Kruskal {
+private:
+    list<Edge> forest;
 public:
-    list<Vertex> mst;
-    list<Edge> floresta;
-    
-    Kruskal(NeuronGraph& graph);
-    void union_set(Vertex u, Vertex v);
-    Vertex find_set(Vertex x);
+    Kruskal(NeuronGraph& g);
+    list<Neuron> pai;
+    list<Edge>& get_list_forest() {
+        return forest;
+    };
+    Vertex find_set(Neuron x);
+    void union_set(Neuron u, Neuron v);
 };
-
-Kruskal::Kruskal(NeuronGraph& graph) {
-    for (Neuron v: graph.get_lista_vertices()) {
-        mst.push_back(v.vertex);
+Kruskal::Kruskal(NeuronGraph& g) {
+    for (Neuron v: g.getListNeurons()) {
+        pai.push_back(v);
     }
-
-    mst.sort();
-
-    for (Edge aresta: graph.get_lista_arestas()) {
+    g.getListEdges().sort([](const Edge& e1, const Edge& e2){
+        return e1.weight<e2.weight;
+    });
+    for (Edge aresta: g.getListEdges()) {
         if (find_set(aresta.vertex) != find_set(aresta.vertex2)) {
-            floresta.push_back(aresta);
+            forest.push_back(aresta);
             union_set(aresta.vertex, aresta.vertex2);
         }
     }
-    //pegar a floresta
 }
 
-Vertex Kruskal::find_set(Vertex x) {
-    for(Vertex vertex: mst) {
-        if((vertex == x) && (vertex != x+1)) {
-            vertex = find_set(vertex);
-        }
+
+Vertex Kruskal::find_set(Neuron x) {
+    list<Neuron>::iterator it = pai.begin();
+    advance(it,x.vertex-1);
+    if(it->vertex!=x.vertex) {
+        *it = find_set(*it);
     }
-    return x;
+    return it->vertex;
 }
-
-void Kruskal::union_set(Vertex u, Vertex v) {
-    for(Vertex vertex: mst) {
-        if(vertex == v) {
-            vertex = u;
-        }
-    }
+void Kruskal::union_set(Neuron u, Neuron v) {
+    list<Neuron>::iterator it = pai.begin();
+    advance(it,v.vertex-1);
+    *it= u;
 }
-
-
 
 // VERTICE DO GRAFO CEREBRO
 // -----------------------------------------------------------------------------
@@ -240,6 +234,11 @@ BrainGraph::BrainGraph(uint numVertices): numVertices(numVertices), numEdges(0) 
 BrainGraph::~BrainGraph() {
     for(uint i = 0; i <= numVertices; ++i) {
         adj[i].clear();
+    }
+    for (uint i = 1; i <= numVertices; ++i) {
+        if (neuronBlocks[i].neuronBlockGraph) {
+            delete neuronBlocks[i].neuronBlockGraph;
+        }
     }
     delete[] adj;
     delete[] neuronBlocks;
@@ -606,12 +605,16 @@ int main(){
     
     list<VertexDijkstra> lista = minimunPath.getMinimunPath(brain.getEnd());
 
+    Weight sumOfWeights = 0;
+
     for(VertexDijkstra item: lista) {
         if(brain.getNeuron(item.vertex)->getNumSickNeurons() > 0) {
-            Kruskal(*brain.getNeuron(item.vertex));
+            Kruskal mst(*brain.getNeuron(item.vertex));
+            // sumOfWeights = sumOfWeights + mst.getWeight();
         }
-        
     }
+
+    cout << sumOfWeights;
 
     return 0;
 };

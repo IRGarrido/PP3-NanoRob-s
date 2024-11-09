@@ -110,7 +110,7 @@ public:
     list<Vertex>& get_lista_vertices() {
         return listNeuron;
     };
-    list<Edge>& get_lista_arestas() {
+    list<Edge>& getListEdges() {
         return listEdges;
     };
     void add_edge(Vertex, Vertex, Weight);
@@ -195,7 +195,7 @@ Kruskal::Kruskal(NeuronGraph& graph) {
 
     mst.sort();
 
-    for (Edge aresta: graph.get_lista_arestas()) {
+    for (Edge aresta: graph.getListEdges()) {
         if (find_set(aresta.vertex) != find_set(aresta.vertex2)) {
             floresta.push_back(aresta);
             union_set(aresta.vertex, aresta.vertex2);
