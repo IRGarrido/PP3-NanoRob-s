@@ -8,7 +8,6 @@ typedef unsigned int uint;
 typedef unsigned int Vertex;
 typedef double Weight;
 
-
 // ELEMENTO LISTA DE ADJACENCIA DE GRAFO PONDERADO
 // -----------------------------------------------------------------------------
 class VertexWeightPair {
@@ -28,7 +27,6 @@ public:
     Edge(Vertex vertex,Vertex vertex2, Weight weight): vertex(vertex),vertex2(vertex2), weight(weight) {};
 };
 
-
 // NEURONIO
 // -----------------------------------------------------------------------------
 class Neuron {
@@ -38,8 +36,7 @@ public:
     Neuron(Vertex vertex): vertex(vertex), sick(false){};
 };
 
-
-// SEGUNDO GRAFO - BLOCOS DE NEURONIOS - NEURONIOS - KRUSKAL
+// SEGUNDO GRAFO - BLOCOS DE NEURONIOS - NEURONIOS - PONDERADO DIRECIONAL - KRUSKAL 
 // -----------------------------------------------------------------------------
 class NeuronGraph {
 private:
@@ -75,7 +72,7 @@ public:
         return adj[v];
     };
     void turnSick(Vertex vertex){
-        for(Neuron neuron: listNeuron) {
+        for(Neuron& neuron: listNeuron) {
             if(neuron.vertex == vertex) {
                 neuron.sick = true;
                 numSickNeurons++;
@@ -100,7 +97,7 @@ NeuronGraph::~NeuronGraph() {
 };
 
 void NeuronGraph::addEdge(Vertex v, Vertex u, Weight w) {
-    VertexWeightPair pair_v(u, w);  
+    VertexWeightPair pair_v(u, w);
 
     adj[v].push_back(pair_v);
 
@@ -117,7 +114,6 @@ Weight NeuronGraph::getWeightEdge(Vertex v, Vertex u) {
     }
     return 0.0;
 }
-
 
 // KRUSKAL
 // -----------------------------------------------------------------------------
@@ -164,10 +160,15 @@ Vertex Kruskal::find_set(Neuron x) {
     }
     return it->vertex;
 };
+
 void Kruskal::union_set(Neuron u, Neuron v) {
-    list<Neuron>::iterator it = pai.begin();
-    advance(it,v.vertex-1);
-    *it= u;
+    Vertex pai_u = find_set(u);
+    Vertex pai_v = find_set(v);
+    for(auto it=pai.begin();it!=pai.end();++it){
+        if(it->vertex == pai_v){
+            it->vertex=pai_u;
+        }
+    }
 };
 
 Weight Kruskal::getWeight() {
@@ -193,7 +194,7 @@ public:
     };
 };
 
-// PRIMEIRO GRAFO - CEREBRO - BLOCOS DE NEURONIOS - DIJKSTRA
+// PRIMEIRO GRAFO - CEREBRO - BLOCOS DE NEURONIOS - PONDERADO - DIJKSTRA
 // -----------------------------------------------------------------------------
 class BrainGraph{
 private:
@@ -262,8 +263,10 @@ BrainGraph::~BrainGraph() {
 
 void BrainGraph::addEdge(Vertex v, Vertex u, Weight w) {
     VertexWeightPair pair_v(u, w);
+    VertexWeightPair pair_u(v, w);
 
     adj[v].push_back(pair_v);
+    adj[u].push_back(pair_u);
     numEdges++;
 };
 
@@ -466,6 +469,29 @@ public:
     list<VertexDijkstra> getMinimunPath(Vertex);
 };
 
+void Dijkstra::init(BrainGraph& graph, Vertex origin) {
+
+    listNeuron = new VertexDijkstra[graph.getNumVertices() + 1];
+
+    for(uint i = 1; i <= graph.getNumVertices(); ++i){
+        VertexDijkstra v(i);
+        listNeuron[i] = v;
+    }
+    listNeuron[origin].distance = 0;
+};
+
+void Dijkstra::relax(VertexDijkstra& u, VertexDijkstra& v, Weight w, PriorityQueueMin& queue) {
+    if(v.distance > u.distance + w) {
+        v.distance = u.distance + w;
+
+        if(v.previous) {
+            v.previous = nullptr;
+        }
+
+        v.previous = &u;
+        queue.decreaseMin(v.vertex, u.distance + w);
+    }
+};
 Dijkstra::Dijkstra(BrainGraph& graph, Vertex origin): graph(graph) {
     init(graph, origin);
     PriorityQueueMin queue;
@@ -530,29 +556,7 @@ Dijkstra::~Dijkstra() {
     listNeuron = nullptr;
 };
 
-void Dijkstra::init(BrainGraph& graph, Vertex origin) {
 
-    listNeuron = new VertexDijkstra[graph.getNumVertices() + 1];
-
-    for(uint i = 1; i <= graph.getNumVertices(); ++i){
-        VertexDijkstra v(i);
-        listNeuron[i] = v;
-    }
-    listNeuron[origin].distance = 0;
-};
-
-void Dijkstra::relax(VertexDijkstra& u, VertexDijkstra& v, Weight w, PriorityQueueMin& queue) {
-    if(v.distance > u.distance + w) {
-        v.distance = u.distance + w;
-
-        if(v.previous) {
-            v.previous = nullptr;
-        }
-
-        v.previous = &u;
-        queue.decreaseMin(v.vertex, u.distance + w);
-    }
-};
 
 
 // MAIN
@@ -610,14 +614,13 @@ int main(){
     list<VertexDijkstra> path = minimunPath.getMinimunPath(brain.getEnd());
 
     Weight sumOfWeights = 0;
-
+    
     for(VertexDijkstra vertex: path) {
         if(brain.getNeuron(vertex.vertex)->getNumSickNeurons() > 0) {
             Kruskal mst(*brain.getNeuron(vertex.vertex));
             sumOfWeights += mst.getWeight();
         }
     }
-
     cout << sumOfWeights;
 
     return 0;
