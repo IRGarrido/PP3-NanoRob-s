@@ -4,11 +4,11 @@
 **Última atualização:** 10/11/2024 
 
 ## Descrição
-    O projeto consiste, resumidamente, na implementação de estruturas de dados como algoritmos de busca por caminhos mínimos a fim de gerar uma simulação de um tratamento fictício e simplificado do cérebro humano por meio de nano-robôs. 
+O projeto consiste, resumidamente, na implementação de estruturas de dados como algoritmos de busca por caminhos mínimos a fim de gerar uma simulação de um tratamento fictício e simplificado do cérebro humano por meio de nano-robôs. 
 
-    A descrição do projeto é dada através do enunciado.
+A descrição do projeto é dada através do enunciado.
 
-    [Enunciado.pdf](https://github.com/IRGarrido/PP3-NanoRobos/blob/master/Enunciado.pdf)
+[Enunciado.pdf](https://github.com/IRGarrido/PP3-NanoRobos/blob/master/Enunciado.pdf)
 
 ## Requisitos
 - **Estruturas de dados:**  Grafo ponderado com lista de adjacência, fila de prioridade mínima com heap binário mínimo;
